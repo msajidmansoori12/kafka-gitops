@@ -7,7 +7,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "3"
 spec:
   kafka:
-    version: 3.6.0
+    version: 4.2.0
     replicas: 1                         # Minimal: single broker
     listeners:
       - name: plain
