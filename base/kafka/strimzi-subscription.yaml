@@ -3,6 +3,9 @@ kind: Subscription
 metadata:
   name: strimzi-kafka-operator
   namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
   channel: stable
   name: strimzi-kafka-operator
