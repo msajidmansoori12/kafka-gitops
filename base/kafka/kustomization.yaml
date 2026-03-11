@@ -7,3 +7,4 @@ resources:
   - strimzi-subscription.yaml
   - kafka-cluster.yaml
   - kafka-topic.yaml
+  - kafka-node-pool.yaml

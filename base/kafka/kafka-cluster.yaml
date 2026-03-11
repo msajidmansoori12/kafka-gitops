@@ -8,7 +8,6 @@ metadata:
 spec:
   kafka:
     version: 4.2.0
-    replicas: 1                         # Minimal: single broker
     listeners:
       - name: plain
         port: 9092
@@ -24,17 +23,6 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
-      inter.broker.protocol.version: "3.6"
-    storage:
-      type: persistent-claim
-      size: 1Gi                         # Small PVC - sufficient for the demo
-      deleteClaim: false
-  zookeeper:
-    replicas: 1                         # Minimal: single ZooKeeper node
-    storage:
-      type: persistent-claim
-      size: 1Gi
-      deleteClaim: false
   entityOperator:
-    topicOperator: {}                   # Enables KafkaTopic CRD management
+    topicOperator: {}
     userOperator: {}
