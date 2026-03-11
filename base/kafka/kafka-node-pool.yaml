@@ -13,4 +13,6 @@ spec:
     - controller
     - broker
   storage:
-    type: ephemeral
+    type: persistent-claim
+    size: 1Gi
+    deleteClaim: false
