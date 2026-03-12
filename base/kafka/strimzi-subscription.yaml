@@ -9,6 +9,6 @@ metadata:
 spec:
   channel: stable
   name: strimzi-kafka-operator
-  source: community-operators
-  sourceNamespace: openshift-marketplace
+  source: operatorhubio-catalog
+  sourceNamespace: olm
   installPlanApproval: Automatic
