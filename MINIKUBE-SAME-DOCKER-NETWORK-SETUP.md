@@ -55,6 +55,29 @@ Verify:
 docker network ls
 ```
 
+#### Inspect the network to see the IP range
+
+Before assigning static IPs to Minikube, check which subnet Docker uses for this network:
+
+```bash
+docker network inspect minikube-mc
+```
+
+In the output, look for the **IPAM** section and its **Subnets** entry. For example:
+
+```json
+"IPAM": {
+    "Subnets": {
+        "172.18.0.0/16": {
+            "IPsInUse": 5,
+            "DynamicIPsAvailable": 65531
+        }
+    }
+}
+```
+
+The subnet (e.g. `172.18.0.0/16`) is the range Docker can assign. We use **static IPs within that range** for the two clusters — in this guide, `172.18.0.2` (src) and `172.18.0.3` (tgt). If your network uses a different subnet (e.g. `10.0.0.0/24`), pick two free addresses in that range and use them in the `--static-ip` flags in the next steps.
+
 ---
 
 ### 2. Start the first cluster (src — source / ArgoCD)
