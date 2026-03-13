@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-pvc-permissions
+  namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: fix-permissions
+        image: busybox
+        command:
+        - sh
+        - -c
+        - chown -R 1001:0 /data
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - name: kafka-data
+          mountPath: /data
+      volumes:
+      - name: kafka-data
+        persistentVolumeClaim:
+          claimName: data-my-cluster-my-cluster-pool-0

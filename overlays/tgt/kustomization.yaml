@@ -1,5 +1,6 @@
 resources:
   - ../../base/kafka
+  - pvc-permission-job.yaml
 
 patchesStrategicMerge:
   - use-fsgroup.yaml
