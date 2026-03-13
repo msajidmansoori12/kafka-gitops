@@ -5,7 +5,7 @@ metadata:
   namespace: kafka
   annotations:
     argocd.argoproj.io/sync-wave: "3"
-    strimzi.io/pause-reconciliation: "null"
+    strimzi.io/pause-reconciliation: "true"
 spec:
   kafka:
     version: 4.2.0
