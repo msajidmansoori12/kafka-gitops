@@ -3,6 +3,5 @@ resources:
   - pvc-permission-job.yaml
 
 patchesStrategicMerge:
-  - use-fsgroup.yaml
   - pause-reconciliation.yaml
   - nodepool-replicas.yaml

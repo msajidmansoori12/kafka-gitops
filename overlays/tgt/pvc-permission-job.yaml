@@ -4,7 +4,8 @@ metadata:
   name: kafka-pvc-permissions
   namespace: kafka
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
 spec:
   template:
     spec:
