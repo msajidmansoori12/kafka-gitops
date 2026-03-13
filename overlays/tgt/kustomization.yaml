@@ -2,5 +2,6 @@ resources:
   - ../../base/kafka
 
 patchesStrategicMerge:
+  - use-fsgroup.yaml
   - pause-reconciliation.yaml
   - nodepool-replicas.yaml
