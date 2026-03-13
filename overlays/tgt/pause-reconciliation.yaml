@@ -4,4 +4,4 @@ metadata:
   name: my-cluster
   namespace: kafka
   annotations:
-    strimzi.io/pause-reconciliation: "true"
+    strimzi.io/pause-reconciliation: "false"
