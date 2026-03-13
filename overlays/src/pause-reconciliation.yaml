@@ -1,0 +1,7 @@
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: my-cluster
+  namespace: kafka
+  annotations:
+    strimzi.io/pause-reconciliation: "false"
