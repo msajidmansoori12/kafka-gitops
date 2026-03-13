@@ -4,4 +4,4 @@ metadata:
   name: my-cluster-pool
   namespace: kafka
 spec:
-  replicas: 0
+  replicas: 1
