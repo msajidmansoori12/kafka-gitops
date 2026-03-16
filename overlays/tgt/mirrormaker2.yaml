@@ -3,6 +3,8 @@ kind: KafkaMirrorMaker2
 metadata:
   name: mm2
   namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   version: 4.2.0
   replicas: 1                           # Single MirrorMaker2 worker (minimal)
