@@ -3,6 +3,8 @@ kind: ConfigMap
 metadata:
   name: kafka-demo-app-config
   namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 data:
   KAFKA_BOOTSTRAP_SERVERS: "my-cluster-kafka-bootstrap:9092"
   KAFKA_TOPIC: "test-topic"

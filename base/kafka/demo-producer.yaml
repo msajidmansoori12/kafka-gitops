@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: kafka-demo-producer
   namespace: kafka
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
   labels:
     app: kafka-demo-producer
 spec:
