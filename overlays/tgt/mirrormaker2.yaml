@@ -1,0 +1,50 @@
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaMirrorMaker2
+metadata:
+  name: mm2
+  namespace: kafka
+spec:
+  version: 3.6.0
+  replicas: 1                           # Single MirrorMaker2 worker (minimal)
+  connectCluster: "target"              # MM2 internally uses Kafka Connect
+                                        # targeting the local (target) cluster
+  clusters:
+    # ----- SOURCE CLUSTER -----
+    - alias: "source"
+      bootstrapServers: "172.18.0.2:32545"
+      # Replace SOURCE_BOOTSTRAP_ADDRESS with the external address from Step 4.1
+      # Example: "192.168.1.10:32094"  (NodePort)
+      # Example: "a1b2c3d4.elb.us-east-1.amazonaws.com:9094"  (LoadBalancer)
+      config:
+        ssl.endpoint.identification.algorithm: ""
+
+    # ----- TARGET CLUSTER -----
+    - alias: "target"
+      bootstrapServers: "my-cluster-kafka-bootstrap:9092"
+      # Internal cluster address - MirrorMaker2 runs in the same namespace
+      config:
+        config.storage.replication.factor: 1
+        offset.storage.replication.factor: 1
+        status.storage.replication.factor: 1
+
+  mirrors:
+    - sourceCluster: "source"
+      targetCluster: "target"
+      sourceConnector:
+        config:
+          replication.factor: 1
+          offset-syncs.topic.replication.factor: 1
+          sync.topic.acls.enabled: "false"
+          # Replicate all topics - adjust regex to limit scope
+          topics: ".*"
+      heartbeatConnector:
+        config:
+          heartbeats.topic.replication.factor: 1
+      checkpointConnector:
+        config:
+          checkpoints.topic.replication.factor: 1
+          # Replicate consumer group offsets
+          # This ensures consumers can resume on the target
+          # at the same position they were at on the source
+          sync.group.offsets.enabled: "true"
+          sync.group.offsets.interval.seconds: "60"

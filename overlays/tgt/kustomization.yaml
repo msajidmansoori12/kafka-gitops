@@ -1,5 +1,6 @@
 resources:
   - ../../base/kafka
+  - mirrormaker2.yaml
 
 patchesStrategicMerge:
   - pause-reconciliation.yaml
