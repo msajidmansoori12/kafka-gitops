@@ -13,16 +13,25 @@ This guide walks through:
 3. Deploying Kafka on the target cluster
 4. Configuring MirrorMaker2 for cross-cluster replication
 5. Verifying replication and live message flow
+6. Stopping new messages and verifying replication with offset comparison
+7. Cutover: promoting the target to primary and decommissioning the source
 
 ---
 
 ## Prerequisites
 
-- Two Kubernetes clusters: **source** (`src`) and **target** (`tgt`)
-- `kubectl` configured with contexts `src` and `tgt`
+- Two Kubernetes clusters: **source** and **target**
+- `kubectl` configured with two contexts (e.g. `src` and `tgt`, or `test1` and `test2`)
 - ArgoCD installed on both clusters
 - Strimzi Kafka Operator (managed via ArgoCD)
 - Git repository with the kafka-gitops manifests
+
+---
+
+## Repo notes: demo app and target overlay
+
+- **Demo app:** The base includes a sample app in `base/kafka`: `demo-app-configmap.yaml`, `demo-producer.yaml`, and `demo-consumer.yaml`. The producer sends a message every 10 seconds to the configured topic; the consumer reads from the beginning. Both use the ConfigMap `kafka-demo-app-config` (`KAFKA_BOOTSTRAP_SERVERS`, `KAFKA_TOPIC`).
+- **Target overlay patch:** For the target cluster, `overlays/tgt/demo-app-topic-patch.yaml` patches that ConfigMap so `KAFKA_TOPIC` is `source.test-topic` (the replicated topic name on the target). Without this patch, the demo app on the target would still point at `test-topic`, which is empty there.
 
 ---
 
@@ -312,31 +321,96 @@ Type a few messages at the `>` prompt. Within seconds they should appear in Term
 
 ---
 
-## Summary
+## Step 13: Stop new messages on the source (before cutover)
 
-| Step | Action |
-|------|--------|
-| 1    | Deploy Kafka on source via ArgoCD |
-| 2–3  | Write and verify test data on source |
-| 4    | Check PVCs on source |
-| 5–6  | Deploy ArgoCD and Kafka on target |
-| 7    | Confirm target is empty |
-| 8    | Expose source Kafka, add MirrorMaker2 manifest, push and sync |
-| 9–10 | Verify MM2 connectors and replicated topics |
-| 11–12| Verify data and live replication using `source.test-topic` |
+So that no new messages are written before cutover, scale the demo producer to 0 on the source cluster:
 
-> **Topic naming:** Replicated topics on the target use the `source.` prefix (e.g. `source.test-topic`). When cutting over, either update application config to use `source.test-topic` or use MirrorMaker2 topic renaming if you need the original name.
+```bash
+kubectl scale deployment kafka-demo-producer --replicas=0 -n kafka --context src
+```
+
+Use `--context test1` (or your source context name) if different from `src`. If you use other producers, stop or scale them down as well.
 
 ---
 
-## Next Steps (Cutover)
+## Step 14: Verify replication with offset comparison
 
-After replication is verified and you are ready to promote the target:
+Confirm that the target has caught up by comparing end offsets on source and target. The counts should match.
 
-1. Pause producers on the source.
-2. Wait for replication to drain (check offsets).
-3. Update applications to use the target bootstrap and topic names (e.g. `source.test-topic`).
-4. Remove MirrorMaker2 from the target overlay and sync.
-5. Decommission the source cluster when stable.
+**On source (`test-topic`):**
 
-For detailed cutover steps, see the [Kafka Migration Guide: ArgoCD + MirrorMaker2](https://gist.github.com/jwmatthews/e747a24a9341cc5537d1a73ea26d6886) (Part 5).
+```bash
+kubectl -n kafka run kafka-check-offsets -ti \
+  --image=quay.io/strimzi/kafka:0.38.0-kafka-3.6.0 \
+  --rm=true \
+  --restart=Never \
+  --context src \
+  -- bin/kafka-run-class.sh kafka.tools.GetOffsetShell \
+     --bootstrap-server my-cluster-kafka-bootstrap:9092 \
+     --topic test-topic \
+     --time -1
+```
+
+Example output:
+
+```
+test-topic:0:57
+test-topic:1:9
+test-topic:2:0
+```
+
+**On target (`source.test-topic`, the replicated topic):**
+
+```bash
+kubectl --context tgt -n kafka run kafka-check-offsets-target -ti \
+  --image=quay.io/strimzi/kafka:0.38.0-kafka-3.6.0 \
+  --rm=true \
+  --restart=Never \
+  -- bin/kafka-run-class.sh kafka.tools.GetOffsetShell \
+     --bootstrap-server my-cluster-kafka-bootstrap:9092 \
+     --topic source.test-topic \
+     --time -1
+```
+
+Example output (must match source partition counts):
+
+```
+source.test-topic:0:57
+source.test-topic:1:9
+source.test-topic:2:0
+```
+
+If the offset counts match, replication was successful. If the target lags, wait and re-run until they match before cutover.
+
+---
+
+## Step 15: Cutover — promote target to primary
+
+1. **Stop all producers and consumers** that still point at the source cluster (scale down or update config).
+2. **Wait for MirrorMaker2 to drain** any in-flight messages. Re-run the offset check on the target (Step 14) until it matches the source if needed.
+3. **Update application configs** (ConfigMaps, env vars) to use the target cluster bootstrap address and, if using replicated topics, the topic name (e.g. `source.test-topic`).
+4. **Remove MirrorMaker2 from the target overlay** if used: remove `overlays/tgt/mirrormaker2.yaml` from `overlays/tgt/kustomization.yaml` and delete the `mirrormaker2.yaml` file, then commit and push so ArgoCD syncs and removes the MirrorMaker2 resources.
+5. **Redirect traffic** to the target cluster and scale producers/consumers back up pointing at the target.
+6. **Decommission the source** after the target is stable: delete the source ArgoCD application (e.g. with cascade) and, when satisfied, delete the source cluster PVCs/namespace if desired.
+
+---
+
+## Summary
+
+| Step   | Action |
+|--------|--------|
+| 1      | Deploy Kafka on source via ArgoCD |
+| 2–3    | Write and verify test data on source |
+| 4      | Check PVCs on source |
+| 5–6    | Deploy ArgoCD and Kafka on target |
+| 7      | Confirm target is empty |
+| 8      | Expose source Kafka, add MirrorMaker2 manifest, push and sync |
+| 9–10   | Verify MM2 connectors and replicated topics |
+| 11–12  | Verify data and live replication using `source.test-topic` |
+| 13     | Stop new messages on source (scale demo producer to 0) |
+| 14     | Verify replication with offset comparison (source vs target) |
+| 15     | Cutover: promote target, update configs, remove MM2, decommission source |
+
+> **Topic naming:** Replicated topics on the target use the `source.` prefix (e.g. `source.test-topic`). When cutting over, either update application config to use `source.test-topic` or use MirrorMaker2 topic renaming if you need the original name.
+
+For more background, see the [Kafka Migration Guide: ArgoCD + MirrorMaker2](https://gist.github.com/jwmatthews/e747a24a9341cc5537d1a73ea26d6886) (Part 5).
