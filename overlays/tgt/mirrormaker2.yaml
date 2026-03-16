@@ -11,7 +11,7 @@ spec:
   clusters:
     # ----- SOURCE CLUSTER -----
     - alias: "source"
-      bootstrapServers: "172.18.0.2:32545"
+      bootstrapServers: "172.18.0.2:30297"
       # Replace SOURCE_BOOTSTRAP_ADDRESS with the external address from Step 4.1
       # Example: "192.168.1.10:32094"  (NodePort)
       # Example: "a1b2c3d4.elb.us-east-1.amazonaws.com:9094"  (LoadBalancer)
