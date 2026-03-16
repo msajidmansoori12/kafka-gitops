@@ -1,6 +1,5 @@
 resources:
   - ../../base/kafka
-  - pvc-permission-job.yaml
 
 patchesStrategicMerge:
   - pause-reconciliation.yaml
