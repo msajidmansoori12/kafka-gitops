@@ -9,7 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/msajidmansoori12/kafka-gitops.git
-    targetRevision: main
+    targetRevision: mirror-maker
     path: overlays/src
   destination:
     server: https://kubernetes.default.svc
