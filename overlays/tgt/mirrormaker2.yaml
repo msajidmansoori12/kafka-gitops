@@ -4,7 +4,7 @@ metadata:
   name: mm2
   namespace: kafka
 spec:
-  version: 3.6.0
+  version: 4.2.0
   replicas: 1                           # Single MirrorMaker2 worker (minimal)
   connectCluster: "target"              # MM2 internally uses Kafka Connect
                                         # targeting the local (target) cluster
