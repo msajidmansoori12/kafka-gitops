@@ -5,3 +5,4 @@ resources:
 patchesStrategicMerge:
   - pause-reconciliation.yaml
   - nodepool-replicas.yaml
+  - demo-app-topic-patch.yaml
