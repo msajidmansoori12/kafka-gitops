@@ -8,3 +8,7 @@ resources:
   - kafka-cluster.yaml
   - kafka-topic.yaml
   - kafka-node-pool.yaml
+  # Demo app: producer + consumer (optional; remove if not needed)
+  - demo-app-configmap.yaml
+  - demo-producer.yaml
+  - demo-consumer.yaml

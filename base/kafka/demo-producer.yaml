@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-demo-producer
+  namespace: kafka
+  labels:
+    app: kafka-demo-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-demo-producer
+  template:
+    metadata:
+      labels:
+        app: kafka-demo-producer
+    spec:
+      containers:
+        - name: producer
+          image: quay.io/strimzi/kafka:0.38.0-kafka-3.6.0
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Producer started. Sending a message every ${PRODUCER_INTERVAL_SECONDS:-10}s to topic ${KAFKA_TOPIC}"
+              while true; do
+                echo "Hello from demo producer at $(date)"
+                sleep "${PRODUCER_INTERVAL_SECONDS:-10}"
+              done | /opt/kafka/bin/kafka-console-producer.sh \
+                --bootstrap-server "$KAFKA_BOOTSTRAP_SERVERS" \
+                --topic "$KAFKA_TOPIC"
+          envFrom:
+            - configMapRef:
+                name: kafka-demo-app-config
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
